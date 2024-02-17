@@ -12,5 +12,10 @@ pub enum Command {
 
     /// list all simulator/emulator
     #[clap(name = "list")]
-    List,
+    List {
+        #[clap(short, long)]
+        ios: bool,
+        #[clap(short, long)]
+        android: bool,
+    },
 }

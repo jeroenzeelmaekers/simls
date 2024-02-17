@@ -14,6 +14,6 @@ fn main()  {
     let Cli { command } = Cli::parse();
 
     match command {
-        Command::List => list::run(devices),
+        Command::List {ios, android} => list::run(devices, ios, android),
     }
 }
