@@ -2,6 +2,11 @@
 name = "simls"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A simple cli tool that allows for managing of android emulators & iOS simulators."
+homepage = "https://github.com/jeroenzeelmaekers/simls"
+repository = "https://github.com/jeroenzeelmaekers/simls"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
