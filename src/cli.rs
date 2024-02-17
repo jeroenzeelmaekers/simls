@@ -10,7 +10,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
 
-    /// start prompt to boot a simulator/emulator
+    /// list all simulator/emulator
     #[clap(name = "list")]
     List,
 }
