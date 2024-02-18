@@ -15,25 +15,20 @@ pub fn run(ios_devices: Devices, android_devices: Vec<String>, ios: bool, androi
 
 fn list_ios(devices: Devices) {
     println!("iOS Devices:");
-    for (platform, device) in devices.devices.iter() {
-        if let Some(ios_version) = extract_ios_version(platform) {
-            device.iter().for_each(|device| {
-                let status = match device.state.as_str() {
-                    "Booted" => device.state.green(),
-                    "Shutdown" => device.state.red(),
-                    _ => device.state.normal(),
-                };
-                println!("{} ({}) - {}", device.name, ios_version, status)
-            });
-        } else {
-            device.iter().for_each(|device| {
-                let status = match device.state.as_str() {
-                    "Booted" => device.state.green(),
-                    "Shutdown" => device.state.red(),
-                    _ => device.state.normal(),
-                };
-                println!("{} - {}", device.name, status)
-            });
+    for (platform, device_list) in devices.devices.iter() {
+        let ios_version = extract_ios_version(platform).unwrap_or_default();
+        for device in device_list {
+            let status = match device.state.as_str() {
+                "Booted" => device.state.green(),
+                "Shutdown" => device.state.red(),
+                _ => device.state.normal(),
+            };
+            let display_name = if ios_version.is_empty() {
+                device.name.clone()
+            } else {
+                format!("{} ({})", device.name, ios_version)
+            };
+            println!("{} - {}", display_name, status);
         }
     }
 }
