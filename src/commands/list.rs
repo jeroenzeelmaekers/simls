@@ -1,5 +1,5 @@
 use crate::structs::devices::Devices;
-use crate::utils::extract_ios_version;
+use crate::utils::ios::extract_ios_version;
 use colored::Colorize;
 
 pub fn run(ios_devices: Devices, android_devices: Vec<String>, ios: bool, android: bool) {
@@ -40,7 +40,6 @@ fn list_ios(devices: Devices) {
 
 fn list_android(android_devices: Vec<String>) {
     println!("Android Devices:");
-
     android_devices
         .iter()
         .for_each(|device| println!("{}", device));

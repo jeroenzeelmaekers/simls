@@ -1,0 +1,64 @@
+use crate::structs::devices::Devices;
+use crate::utils::ios::start_ios_simulator;
+use dialoguer::{theme::ColorfulTheme, Select};
+
+pub fn run(ios_devices: Devices, android_devices: Vec<String>, ios: bool, android: bool) {
+    if ios {
+        select_ios_device(ios_devices);
+    } else if android {
+        select_android_device(android_devices);
+    } else {
+        let platform = select_platform().unwrap();
+        match platform.as_str() {
+            "iOS" => select_ios_device(ios_devices),
+            "Android" => select_android_device(android_devices),
+            _ => println!("Invalid platform"),
+        }
+    }
+}
+
+fn select_platform() -> Result<String, String> {
+    let selections = &["iOS", "Android"];
+
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select your platform")
+        .default(0)
+        .items(&selections[..])
+        .interact_opt()
+        .unwrap();
+
+    match selection {
+        Some(selection) => Ok(selections[selection].to_string()),
+        None => Err("No platform selected".to_string()),
+    }
+}
+
+fn select_ios_device(ios_devices: Devices) {
+    println!("Selecting iOS device");
+
+    let selections: Vec<(&str, &str)> = ios_devices
+        .devices
+        .values()
+        .flat_map(|devices| {
+            devices
+                .iter()
+                .map(|device| (device.name.as_str(), device.udid.as_str()))
+        })
+        .collect();
+
+    let device_names: Vec<&str> = selections.iter().map(|(name, _)| *name).collect();
+
+    let selection_index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select your iOS device")
+        .default(0)
+        .items(&device_names)
+        .interact()
+        .unwrap();
+
+    let selected_device_identifier = selections[selection_index].1;
+    start_ios_simulator(selected_device_identifier);
+}
+
+fn select_android_device(_android_devices: Vec<String>) {
+    println!("Selecting Android device");
+}

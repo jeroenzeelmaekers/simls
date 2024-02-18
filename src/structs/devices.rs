@@ -29,3 +29,71 @@ pub struct Device {
 pub struct Devices {
     pub devices: HashMap<String, Vec<Device>>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DeviceType {
+    #[serde(rename = "productFamily")]
+    pub product_family: String,
+    #[serde(rename = "bundlePath")]
+    pub bundle_path: String,
+    #[serde(rename = "maxRuntimeVersion")]
+    pub max_runtime_version: String,
+    #[serde(rename = "maxRuntimeVersionString")]
+    pub max_runtime_version_string: String,
+    #[serde(rename = "identifier")]
+    pub identifier: String,
+    #[serde(rename = "minRuntimeVersion")]
+    pub min_runtime_version: String,
+    #[serde(rename = "minRuntimeVersionString")]
+    pub min_runtime_version_string: String,
+    #[serde(rename = "name")]
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DeviceTypes {
+    #[serde(rename = "devicetypes")]
+    pub device_types: Vec<DeviceType>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Runtime {
+    #[serde(rename = "bundlePath")]
+    pub bundle_path: String,
+    #[serde(rename = "buildVersion")]
+    pub build_version: String,
+    #[serde(rename = "platform")]
+    pub platform: String,
+    #[serde(rename = "runtimeRoot")]
+    pub runtime_root: String,
+    #[serde(rename = "identifier")]
+    pub identifier: String,
+    #[serde(rename = "version")]
+    pub version: String,
+    #[serde(rename = "isInternal")]
+    pub is_internal: bool,
+    #[serde(rename = "isAvailable")]
+    pub is_available: bool,
+    #[serde(rename = "name")]
+    pub name: String,
+    #[serde(rename = "supportedDeviceTypes")]
+    pub supported_device_types: Vec<SupportedDeviceTypes>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SupportedDeviceTypes {
+    #[serde(rename = "bundlePath")]
+    pub bundle_path: String,
+    #[serde(rename = "name")]
+    pub name: String,
+    #[serde(rename = "identifier")]
+    pub identifier: String,
+    #[serde(rename = "productFamily")]
+    pub product_family: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Runtimes {
+    #[serde(rename = "runtimes")]
+    pub runtimes: Vec<Runtime>,
+}
