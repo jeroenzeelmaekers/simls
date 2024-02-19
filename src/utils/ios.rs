@@ -49,7 +49,27 @@ pub fn start_ios_simulator(udid: &str) {
             .output()
             .expect("Failed to boot simulator");
         Command::new("open")
-            .args(["-g", "-a", "Simulator"])
+            .args(["-a", "Simulator"])
+            .output()
+            .expect("Failed to open Simulator.app");
+        Command::new("osascript")
+            .args([
+                "-e",
+                r#"if running of application "Simulator" then
+          tell application "System Events"
+            set theWindows to windows of (processes whose name is "Simulator")
+            repeat with theWindow in (the first item of theWindows)
+              set theWindowName to name of theWindow
+              if theWindowName contains "${device.name}" then
+                perform action "AXRaise" of theWindow
+              end if
+            end repeat
+          end tell
+          tell the application "Simulator"
+            activate
+          end tell
+        end if"#,
+            ])
             .output()
             .expect("Failed to open Simulator.app");
     } else {
