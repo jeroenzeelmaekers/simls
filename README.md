@@ -7,9 +7,9 @@ simls is a **simulator/emulator manager** that provides an easy to use CLI inter
 [How it works](#how-it-works) •
 [Installation](#installation)
 
-</div>
-
 ![Example image][image]
+
+</div>
 
 ## How it works
 
