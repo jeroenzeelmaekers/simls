@@ -1,8 +1,10 @@
+use crate::structs::android_devices::Device;
+use crate::utils::android::start_android_emulator;
 use crate::utils::ios::start_ios_simulator;
-use crate::{structs::devices::Devices, utils::ios::extract_ios_version};
+use crate::{structs::ios_devices::Devices, utils::ios::extract_ios_version};
 use dialoguer::{theme::ColorfulTheme, Select};
 
-pub fn run(ios_devices: Devices, android_devices: Vec<String>, ios: bool, android: bool) {
+pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
     if ios {
         select_ios_device(ios_devices);
     } else if android {
@@ -62,6 +64,21 @@ fn select_ios_device(ios_devices: Devices) {
     start_ios_simulator(&selected_device_identifier);
 }
 
-fn select_android_device(_android_devices: Vec<String>) {
+fn select_android_device(_android_devices: Vec<Device>) {
     println!("Selecting Android device");
+
+    let mut selections = Vec::new();
+    for device in _android_devices {
+        selections.push(device.name.clone());
+    }
+
+    let selection_index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select your Android device")
+        .default(0)
+        .items(&selections[..])
+        .interact()
+        .unwrap();
+
+    let selected_device_identifier = &selections[selection_index];
+    start_android_emulator(&selected_device_identifier);
 }

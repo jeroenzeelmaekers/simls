@@ -1,7 +1,9 @@
 use serde_json::Result;
 use std::process::Command;
 
-pub fn read_android_emulators() -> Result<Vec<String>> {
+use crate::structs::android_devices::Device;
+
+pub fn read_android_emulators() -> Result<Vec<Device>> {
     let output = if cfg!(target_os = "macos") {
         Command::new("emulator")
             .args(["-list-avds"])
@@ -14,11 +16,33 @@ pub fn read_android_emulators() -> Result<Vec<String>> {
             .expect("Failed to execute command")
     };
 
-    let output_string = String::from_utf8(output.stdout)
+    let output_string: Vec<_> = String::from_utf8(output.stdout)
         .unwrap()
         .split('\n')
         .map(|s| s.to_string())
         .collect();
 
-    Ok(output_string)
+    let devices = output_string
+        .iter()
+        .map(|s| Device {
+            name: s.to_string(),
+            id: s.to_string(),
+        })
+        .collect();
+
+    Ok(devices)
+}
+
+pub fn start_android_emulator(emulator_name: &str) {
+    if cfg!(target_os = "macos") {
+        Command::new("emulator")
+            .args(["-avd", emulator_name])
+            .output()
+            .expect("Failed to start emulator");
+    } else {
+        Command::new("echo")
+            .args(["No support for your OS yet"])
+            .output()
+            .expect("Failed to execute command");
+    }
 }

@@ -26,4 +26,8 @@ pub enum Command {
         #[clap(short, long)]
         android: bool,
     },
+
+    /// stop a running simulator/emulator
+    #[clap(name = "stop")]
+    Stop,
 }

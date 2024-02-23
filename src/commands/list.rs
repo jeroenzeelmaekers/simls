@@ -1,8 +1,9 @@
-use crate::structs::devices::Devices;
+use crate::structs::android_devices::Device;
+use crate::structs::ios_devices::Devices;
 use crate::utils::ios::extract_ios_version;
 use colored::Colorize;
 
-pub fn run(ios_devices: Devices, android_devices: Vec<String>, ios: bool, android: bool) {
+pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
     if ios {
         list_ios(ios_devices);
     } else if android {
@@ -33,9 +34,9 @@ fn list_ios(devices: Devices) {
     }
 }
 
-fn list_android(android_devices: Vec<String>) {
+fn list_android(android_devices: Vec<Device>) {
     println!("Android Devices:");
     android_devices
         .iter()
-        .for_each(|device| println!("{}", device));
+        .for_each(|device| println!("{}", device.name));
 }

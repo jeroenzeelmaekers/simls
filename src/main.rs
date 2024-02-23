@@ -5,7 +5,7 @@ mod utils;
 
 use clap::Parser;
 use cli::{Cli, Command};
-use commands::{list, start};
+use commands::{list, start, stop};
 use utils::{android, ios};
 
 fn main() {
@@ -17,5 +17,6 @@ fn main() {
     match command {
         Command::List { ios, android } => list::run(ios_devices, android_devices, ios, android),
         Command::Start { ios, android } => start::run(ios_devices, android_devices, ios, android),
+        Command::Stop {} => stop::run(ios_devices, android_devices),
     }
 }
