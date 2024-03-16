@@ -60,20 +60,6 @@ pub fn start_ios_simulator(udid: &str) {
     }
 }
 
-pub fn stop_ios_simulator(udid: &str) {
-    if cfg!(target_os = "macos") {
-        Command::new("xcrun")
-            .args(["simctl", "shutdown", udid])
-            .output()
-            .expect("Failed to shutdown simulator");
-    } else {
-        Command::new("echo")
-            .args(["No support for your OS yet"])
-            .output()
-            .expect("Failed to execute command");
-    }
-}
-
 pub fn extract_ios_version(input: &str) -> Option<String> {
     let parts: Vec<&str> = input.split(&['.', '-'][..]).collect();
 
