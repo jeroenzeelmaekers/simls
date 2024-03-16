@@ -22,7 +22,7 @@ simls is currently only available through Cargo.
 ### Cargo
 
 ```shell
-cargo add simls
+cargo install simls
 ```
 
 [image]: .assets/demo.gif
