@@ -17,6 +17,12 @@ simls is a **simulator/emulator manager** that provides an easy to use CLI inter
 
 ## Installation
 
-!TODO
+simls is currently only available through Cargo.
+
+### Cargo
+
+```shell
+cargo add simls
+```
 
 [image]: .assets/demo.gif
