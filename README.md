@@ -2,6 +2,8 @@
 
 # simls
 
+![Downloads][downloads-badge]
+
 simls is a **simulator/emulator manager** that provides an easy to use CLI interface for managing iOS simulators and Android emulators.
 
 [How it works](#how-it-works) •
@@ -31,5 +33,6 @@ cargo install simls
 brew tap jeroenzeelmaekers/tap
 brew install simls
 ```
+[downloads-badge]: https://img.shields.io/github/downloads/jeroenzeelmaekers/simls/total?color=green&style=flat-sq
 
 [image]: .assets/demo.gif
