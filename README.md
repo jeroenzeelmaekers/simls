@@ -17,12 +17,19 @@ simls is a **simulator/emulator manager** that provides an easy to use CLI inter
 
 ## Installation
 
-simls is currently only available through Cargo.
+simls is currently only available through Cargo and Homebrew.
 
 ### Cargo
 
 ```shell
 cargo install simls
+```
+
+### Homebrew
+
+```shell
+brew tap jeroenzeelmaekers/tap
+brew install simls
 ```
 
 [image]: .assets/demo.gif
