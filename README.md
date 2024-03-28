@@ -33,6 +33,6 @@ cargo install simls
 brew tap jeroenzeelmaekers/tap
 brew install simls
 ```
-[downloads-badge]: https://img.shields.io/github/downloads/jeroenzeelmaekers/simls/total?color=green&style=flat-sq
 
+[downloads-badge]: https://img.shields.io/github/downloads/jeroenzeelmaekers/simls/total?color=green&style=flat-sq
 [image]: .assets/demo.gif
