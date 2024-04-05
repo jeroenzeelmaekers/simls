@@ -1,7 +1,7 @@
 [package]
 name = "simls"
 version = "0.0.1"
-edition = "2024"
+edition = "2021"
 license = "MIT"
 description = "A simple cli tool that allows for managing of android emulators & iOS simulators."
 homepage = "https://github.com/jeroenzeelmaekers/simls"
