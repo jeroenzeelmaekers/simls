@@ -15,7 +15,15 @@ simls is a **simulator/emulator manager** that provides an easy to use CLI inter
 
 ## How it works
 
-!TODO
+simls makes use of the cli tools of Xcode for the iOS simulators and Android studio for the android emulators.
+
+### iOS Simulators
+
+For iOS simulators makes use of the `xcrun simctl` cli that comes with Xcode. This exposes a series of commands that we use to manage the simulators.
+
+### Android Emulators
+
+For android emulators we use the `emulator` cli that gets shipped with Android Studio.
 
 ## Installation
 
