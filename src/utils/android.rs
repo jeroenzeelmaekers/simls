@@ -16,11 +16,13 @@ pub fn read_android_emulators() -> Result<Vec<Device>> {
             .expect("Failed to execute command")
     };
 
-    let output_string: Vec<_> = String::from_utf8(output.stdout)
+    let mut output_string: Vec<_> = String::from_utf8(output.stdout)
         .unwrap()
         .split('\n')
         .map(|s| s.to_string())
         .collect();
+
+    output_string.pop();
 
     let devices = output_string
         .iter()
