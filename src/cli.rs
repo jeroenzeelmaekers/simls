@@ -26,4 +26,13 @@ pub enum Command {
         #[clap(short, long)]
         android: bool,
     },
+
+    /// create a simulator/emulator
+    #[clap(name = "create")]
+    Create {
+        #[clap(short, long)]
+        ios: bool,
+        #[clap(short, long)]
+        android: bool,
+    },
 }
