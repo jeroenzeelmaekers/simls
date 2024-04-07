@@ -9,7 +9,7 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// list all simulator/emulator
+    // list all simulator/emulator
     #[clap(name = "list")]
     List {
         #[clap(short, long)]
@@ -18,7 +18,7 @@ pub enum Command {
         android: bool,
     },
 
-    /// start a simulator/emulator
+    // start a simulator/emulator
     #[clap(name = "start")]
     Start {
         #[clap(short, long)]
