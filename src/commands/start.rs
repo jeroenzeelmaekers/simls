@@ -65,11 +65,11 @@ fn select_ios_device(ios_devices: Devices) {
     start_ios_simulator(&selected_device_identifier);
 }
 
-fn select_android_device(_android_devices: Vec<Device>) {
+fn select_android_device(android_devices: Vec<Device>) {
     println!("Selecting Android device");
 
     let mut selections = Vec::new();
-    for device in _android_devices {
+    for device in android_devices {
         selections.push(device.name.clone());
     }
 
