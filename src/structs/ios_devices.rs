@@ -57,10 +57,28 @@ pub struct DeviceTypes {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct SupportedDeviceTypes {
+    #[serde(rename = "bundlePath")]
+    pub bundle_path: String,
+    #[serde(rename = "name")]
+    pub name: String,
+    #[serde(rename = "identifier")]
+    pub identifier: String,
+    #[serde(rename = "productFamily")]
+    pub product_family: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Runtimes {
+    #[serde(rename = "runtimes")]
+    pub runtimes: Vec<Runtime>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Runtime {
     #[serde(rename = "bundlePath")]
     pub bundle_path: String,
-    #[serde(rename = "buildVersion")]
+    #[serde(rename = "buildversion")]
     pub build_version: String,
     #[serde(rename = "platform")]
     pub platform: String,
@@ -78,22 +96,4 @@ pub struct Runtime {
     pub name: String,
     #[serde(rename = "supportedDeviceTypes")]
     pub supported_device_types: Vec<SupportedDeviceTypes>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SupportedDeviceTypes {
-    #[serde(rename = "bundlePath")]
-    pub bundle_path: String,
-    #[serde(rename = "name")]
-    pub name: String,
-    #[serde(rename = "identifier")]
-    pub identifier: String,
-    #[serde(rename = "productFamily")]
-    pub product_family: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Runtimes {
-    #[serde(rename = "runtimes")]
-    pub runtimes: Vec<Runtime>,
 }
