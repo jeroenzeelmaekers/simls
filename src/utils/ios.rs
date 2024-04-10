@@ -1,4 +1,4 @@
-use crate::structs::ios_devices::Devices;
+use crate::structs::ios_devices::{Devices, Runtimes};
 use serde_json::Result;
 use std::process::Command;
 
@@ -73,4 +73,38 @@ pub fn extract_ios_version(input: &str) -> Option<String> {
         }
     }
     None
+}
+
+pub fn read_downloaded_ios_version() -> Result<Runtimes> {
+    let output = if cfg!(target_os = "macos") {
+        Command::new("xcrun")
+            .args(["simctl", "list", "runtimes", "--json"])
+            .output()
+            .expect("Failed to execute command")
+    } else {
+        Command::new("echo")
+            .args(["No support for your OS yet"])
+            .output()
+            .expect("Failed to execute command")
+    };
+
+    let output_string = String::from_utf8(output.stdout).unwrap();
+
+    let runtimes: Runtimes = serde_json::from_str(&output_string)?;
+
+    Ok(runtimes)
+}
+
+pub fn create_ios_device(device_name: &str, device_identifier: &str, runtime_identifier: &str) {
+    if cfg!(target_os = "macos") {
+        Command::new("xcrun")
+            .args(["simctl", "create", device_name, device_identifier, runtime_identifier])
+            .output()
+            .expect("Failed to execute command")
+    } else {
+        Command::new("echo")
+            .args(["No support for your OS yet"])
+            .output()
+            .expect("Failed to execute command")
+    };
 }
