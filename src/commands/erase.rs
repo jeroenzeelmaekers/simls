@@ -4,14 +4,14 @@ use crate::{structs::{android_devices::Device, ios_devices::Devices}, utils::ios
 
 pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
     if ios {
-        delete_ios_device(ios_devices);
+        erase_ios_device(ios_devices);
     } else if android {
-        delete_android_device(android_devices);
+        erase_android_device(android_devices);
     } else {
         let platform = select_platform().unwrap();
         match platform.as_str() {
-            "iOS" => delete_ios_device(ios_devices),
-            "Android" => delete_android_device(android_devices),
+            "iOS" => erase_ios_device(ios_devices),
+            "Android" => erase_android_device(android_devices),
             _ => println!("Invalid platform"),
         }
     }
@@ -33,8 +33,8 @@ fn select_platform() -> Result<String, String> {
     }
 }
 
-fn delete_ios_device(ios_devices: Devices) {
-    println!("Delete iOS device");
+fn erase_ios_device(ios_devices: Devices) {
+    println!("Erase iOS device");
 
     let mut devices_selection = Vec::new();
 
@@ -48,7 +48,7 @@ fn delete_ios_device(ios_devices: Devices) {
     
     let device_names: Vec<&str> = devices_selection.iter().map(|(name, _)| name.as_str()).collect();
     let selection_device_index = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select your device type")
+        .with_prompt("Select the device you want to erase the content and settings from")
         .default(0)
         .items(&device_names)
         .interact()
@@ -56,9 +56,9 @@ fn delete_ios_device(ios_devices: Devices) {
 
     let (_, udid) = devices_selection.get(selection_device_index).unwrap();
 
-    ios::delete_ios_device(udid)
+    ios::erase_ios_device(udid)
 }
 
-fn delete_android_device(_android_devices: Vec<Device>) {
+fn erase_android_device(_android_devices: Vec<Device>) {
     println!("Delete Android device");
 }

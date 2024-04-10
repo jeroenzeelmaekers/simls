@@ -44,4 +44,13 @@ pub enum Command {
         #[clap(short, long)]
         android: bool,
     },
+
+    /// erase all settings and content from a simulator/emulator
+    #[clap(name = "erase")]
+    Erase {
+        #[clap(short, long)]
+        ios: bool,
+        #[clap(short, long)]
+        android: bool,
+    },
 }

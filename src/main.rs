@@ -5,7 +5,7 @@ mod utils;
 
 use clap::Parser;
 use cli::{Cli, Command};
-use commands::{list, start, create, delete};
+use commands::{list, start, create, delete, erase};
 use utils::{android, ios};
 
 fn main() {
@@ -19,5 +19,6 @@ fn main() {
         Command::Start { ios, android } => start::run(ios_devices, android_devices, ios, android),
         Command::Create { ios, android } => create::run(ios_devices, android_devices, ios, android),
         Command::Delete { ios, android } => delete::run(ios_devices, android_devices, ios, android),
+        Command::Erase { ios, android } => erase::run(ios_devices, android_devices, ios, android),
     }
 }
