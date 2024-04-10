@@ -122,3 +122,17 @@ pub fn delete_ios_device(device_identifier: &str) {
             .expect("Failed to execute command")
     };
 }
+
+pub fn erase_ios_device(device_identifier: &str) {
+    if cfg!(target_os = "macos") {
+        Command::new("xcrun")
+            .args(["simctl", "erase", device_identifier])
+            .output()
+            .expect("Failed to execute command")
+    } else {
+        Command::new("echo")
+            .args(["No support for your OS yet"])
+            .output()
+            .expect("Failed to execute command")
+    };
+}
