@@ -1,7 +1,7 @@
 
-use dialoguer::{theme::ColorfulTheme, Input, Select};
+use dialoguer::{theme::ColorfulTheme, Select};
 
-use crate::{structs::{android_devices::Device, ios_devices::Devices}, utils::ios::{self}};
+use crate::{structs::{android_devices::Device, ios_devices::Devices}, utils::ios::{self, extract_ios_version}};
 
 pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
     if ios {
@@ -34,8 +34,31 @@ fn select_platform() -> Result<String, String> {
     }
 }
 
-fn delete_ios_device(_ios_devices: Devices) {
-    println!("Delete iOS device")
+fn delete_ios_device(ios_devices: Devices) {
+    println!("Delete iOS device");
+
+    let mut devices_selection = Vec::new();
+
+    for (platform, device_list) in ios_devices.devices.iter() {
+        let ios_version = extract_ios_version(platform).unwrap_or_default();
+        for device in device_list {
+            let device_name = format!("{} ({})", device.name, ios_version);
+            devices_selection.push((device_name, device.udid.clone()));
+        }
+    }
+
+    
+    let device_names: Vec<&str> = devices_selection.iter().map(|(name, _)| name.as_str()).collect();
+    let selection_device_index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select your device type")
+        .default(0)
+        .items(&device_names)
+        .interact()
+        .unwrap();
+
+    let (_, udid) = devices_selection.get(selection_device_index).unwrap();
+
+    ios::delete_ios_device(udid)
 }
 
 fn delete_android_device(_android_devices: Vec<Device>) {
