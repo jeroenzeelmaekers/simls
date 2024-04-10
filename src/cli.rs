@@ -35,4 +35,13 @@ pub enum Command {
         #[clap(short, long)]
         android: bool,
     },
+
+    /// delete a simulator/emulator
+    #[clap(name = "delete")]
+    Delete {
+        #[clap(short, long)]
+        ios: bool,
+        #[clap(short, long)]
+        android: bool,
+    },
 }
