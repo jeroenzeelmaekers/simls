@@ -108,3 +108,17 @@ pub fn create_ios_device(device_name: &str, device_identifier: &str, runtime_ide
             .expect("Failed to execute command")
     };
 }
+
+pub fn delete_ios_device(device_identifier: &str) {
+    if cfg!(target_os = "macos") {
+        Command::new("xcrun")
+            .args(["simctl", "delete", device_identifier])
+            .output()
+            .expect("Failed to execute command")
+    } else {
+        Command::new("echo")
+            .args(["No support for your OS yet"])
+            .output()
+            .expect("Failed to execute command")
+    };
+}
