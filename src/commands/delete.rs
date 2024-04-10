@@ -46,7 +46,6 @@ fn delete_ios_device(ios_devices: Devices) {
             devices_selection.push((device_name, device.udid.clone()));
         }
     }
-
     
     let device_names: Vec<&str> = devices_selection.iter().map(|(name, _)| name.as_str()).collect();
     let selection_device_index = Select::with_theme(&ColorfulTheme::default())
