@@ -1,6 +1,9 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 
-use crate::{structs::{android_devices::Device, ios_devices::Devices}, utils::ios::{self}};
+use crate::{
+    structs::{android_devices::Device, ios_devices::Devices},
+    utils::ios::{self},
+};
 
 pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
     if ios {
@@ -41,7 +44,10 @@ fn create_ios_device(_ios_devices: Devices) {
         runtime_selection.push((runtime.version.clone(), runtime.identifier.clone()));
     }
 
-    let runtime_names: Vec<&str> = runtime_selection.iter().map(|(name, _)| name.as_str()).collect();
+    let runtime_names: Vec<&str> = runtime_selection
+        .iter()
+        .map(|(name, _)| name.as_str())
+        .collect();
     let selection_runtime_index = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Select your runtime")
         .default(0)
@@ -49,14 +55,21 @@ fn create_ios_device(_ios_devices: Devices) {
         .interact()
         .unwrap();
 
-    let supported_devices = &ios_runtimes.runtimes.get(selection_runtime_index).unwrap().supported_device_types;
+    let supported_devices = &ios_runtimes
+        .runtimes
+        .get(selection_runtime_index)
+        .unwrap()
+        .supported_device_types;
 
     let mut devices_selection = Vec::new();
     for device in supported_devices.iter() {
         devices_selection.push((device.name.clone(), device.identifier.clone()));
-    } 
+    }
 
-    let device_names: Vec<&str> = devices_selection.iter().map(|(name, _)| name.as_str()).collect();
+    let device_names: Vec<&str> = devices_selection
+        .iter()
+        .map(|(name, _)| name.as_str())
+        .collect();
     let selection_device_index = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Select your device type")
         .default(0)
@@ -64,14 +77,14 @@ fn create_ios_device(_ios_devices: Devices) {
         .interact()
         .unwrap();
 
-    let (runtime_name, runtime_identifier) = runtime_selection.get(selection_runtime_index).unwrap();
+    let (runtime_name, runtime_identifier) =
+        runtime_selection.get(selection_runtime_index).unwrap();
     let (device_name, device_identifier) = devices_selection.get(selection_device_index).unwrap();
     let simulator_name: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Enter the simulator name")
         .default(format!("{} {}", device_name, runtime_name))
         .interact()
         .unwrap();
-
 
     ios::create_ios_device(&simulator_name, &device_identifier, &runtime_identifier);
 }

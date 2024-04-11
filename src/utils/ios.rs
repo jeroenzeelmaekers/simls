@@ -98,7 +98,13 @@ pub fn read_downloaded_ios_version() -> Result<Runtimes> {
 pub fn create_ios_device(device_name: &str, device_identifier: &str, runtime_identifier: &str) {
     if cfg!(target_os = "macos") {
         Command::new("xcrun")
-            .args(["simctl", "create", device_name, device_identifier, runtime_identifier])
+            .args([
+                "simctl",
+                "create",
+                device_name,
+                device_identifier,
+                runtime_identifier,
+            ])
             .output()
             .expect("Failed to execute command")
     } else {

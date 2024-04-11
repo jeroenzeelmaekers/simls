@@ -38,7 +38,7 @@ pub fn read_android_emulators() -> Result<Vec<Device>> {
 pub fn start_android_emulator(emulator_name: &str) {
     if cfg!(target_os = "macos") {
         Command::new("screen")
-            .args(["-m","-d","emulator","-avd", emulator_name])
+            .args(["-m", "-d", "emulator", "-avd", emulator_name])
             .output()
             .expect("Failed to start emulator");
     } else {

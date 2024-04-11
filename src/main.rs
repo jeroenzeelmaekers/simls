@@ -5,7 +5,7 @@ mod utils;
 
 use clap::Parser;
 use cli::{Cli, Command};
-use commands::{list, start, create, delete, erase};
+use commands::{create, delete, erase, list, start};
 use utils::{android, ios};
 
 fn main() {
