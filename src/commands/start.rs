@@ -41,15 +41,14 @@ fn select_ios_device(ios_devices: Devices) {
     let mut selections = Vec::new();
     for (platform, device_list) in ios_devices.devices.iter() {
         let ios_version = extract_ios_version(platform).unwrap_or_default();
-        device_list.iter()
-            .for_each(|device| {
-                let display_name = if ios_version.is_empty() {
-                    device.name.clone()
-                } else {
-                    format!("{} ({})", device.name, ios_version)
-                };
-                selections.push((display_name.clone(), device.udid.clone()));
-            });
+        device_list.iter().for_each(|device| {
+            let display_name = if ios_version.is_empty() {
+                device.name.clone()
+            } else {
+                format!("{} ({})", device.name, ios_version)
+            };
+            selections.push((display_name.clone(), device.udid.clone()));
+        });
     }
 
     let device_names: Vec<&str> = selections.iter().map(|(name, _)| name.as_str()).collect();
