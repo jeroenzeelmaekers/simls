@@ -27,7 +27,7 @@ For android emulators we use the `emulator` cli that gets shipped with Android S
 
 ## Installation
 
-simls is currently only available through Cargo and Homebrew.
+simls is currently only available through Cargo and Homebrew. Additional system configuration steps are required and can be found in the [wiki](https://github.com/jeroenzeelmaekers/simls/wiki/Installation).
 
 ### Cargo
 
