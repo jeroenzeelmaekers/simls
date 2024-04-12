@@ -67,4 +67,5 @@ fn delete_ios_device(ios_devices: Devices) {
 
 fn delete_android_device(_android_devices: Vec<Device>) {
     println!("Delete Android device");
+    todo!("deleting logic for android devices not yet available")
 }
