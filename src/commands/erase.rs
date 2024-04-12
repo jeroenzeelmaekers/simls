@@ -67,4 +67,5 @@ fn erase_ios_device(ios_devices: Devices) {
 
 fn erase_android_device(_android_devices: Vec<Device>) {
     println!("Delete Android device");
+    todo!("erasing logic for android devices not yet available")
 }
