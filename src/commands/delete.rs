@@ -3,6 +3,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use crate::{
     structs::{android_devices::Device, ios_devices::Devices},
     utils::ios::{self, extract_ios_version},
+    utils::android::delete_android_emulator,
 };
 
 pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
@@ -65,7 +66,17 @@ fn delete_ios_device(ios_devices: Devices) {
     ios::delete_ios_device(udid)
 }
 
-fn delete_android_device(_android_devices: Vec<Device>) {
-    println!("Delete Android device");
-    todo!("deleting logic for android devices not yet available")
+fn delete_android_device(android_devices: Vec<Device>) {
+    let emulator_names: Vec<&str> = android_devices.iter().map(|emulator| emulator.name.as_str()).collect();
+    let selection_emulator_index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select the emulator to delete")
+        .default(0)
+        .items(&emulator_names)
+        .interact()
+        .unwrap();
+
+    let selected_emulator = &android_devices[selection_emulator_index];
+
+    // Delete the selected emulator
+    delete_android_emulator(&selected_emulator.name);
 }
