@@ -84,6 +84,20 @@ pub fn create_android_emulator(emulator_name: &str, device_identifier: &str, sys
     }
 }
 
+pub fn delete_android_emulator(emulator_name: &str) {
+    if cfg!(target_os = "macos") {
+        Command::new("avdmanager")
+            .args(["delete", "avd", "--name", emulator_name])
+            .output()
+            .expect("Failed to delete Android emulator");
+    } else {
+        Command::new("echo")
+            .args(["No support for your OS yet"])
+            .output()
+            .expect("Failed to execute command");
+    }
+}
+
 pub fn list_device_profiles() -> Vec<String> {
     let output = Command::new("avdmanager")
         .args(["list", "device"])
