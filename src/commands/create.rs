@@ -65,9 +65,9 @@ fn create_ios_device(_ios_devices: Devices) {
         devices_selection.push((device.name.clone(), device.identifier.clone()));
     }
 
-    let device_names: Vec<&str> = devices_selection
+    let device_names: Vec<String> = devices_selection
         .iter()
-        .map(|(name, _)| name.as_str())
+        .map(|(name, _)| name.replace(" ", "_"))
         .collect();
     let selection_device_index = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Select your device type")
@@ -104,7 +104,7 @@ fn create_android_device() {
     let selected_device_profile = &device_profiles[selection_device_index];
     let emulator_name: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Enter the emulator name")
-        .default(format!("{} Emulator", selected_device_profile))
+        .default(format!("{}_Emulator", selected_device_profile.replace(" ", "_")))
         .interact()
         .unwrap();
 
