@@ -17,7 +17,7 @@ fn main() {
     match command {
         Command::List { ios, android } => list::run(ios_devices, android_devices, ios, android),
         Command::Start { ios, android } => start::run(ios_devices, android_devices, ios, android),
-        Command::Create { ios, android } => create::run(ios_devices, android_devices, ios, android),
+        Command::Create { ios, android } => create::run(ios_devices, ios, android),
         Command::Delete { ios, android } => delete::run(ios_devices, android_devices, ios, android),
         Command::Erase { ios, android } => erase::run(ios_devices, android_devices, ios, android),
     }

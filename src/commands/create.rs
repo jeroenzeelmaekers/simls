@@ -1,20 +1,19 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 
 use crate::{
-    structs::{android_devices::Device, ios_devices::Devices},
-    utils::ios::{self},
+ structs::ios_devices::Devices, utils::{android::{create_android_emulator, list_device_profiles, list_system_images}, ios::{self}}
 };
 
-pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
+pub fn run(ios_devices: Devices, ios: bool, android: bool) {
     if ios {
         create_ios_device(ios_devices);
     } else if android {
-        create_android_device(android_devices);
+        create_android_device();
     } else {
         let platform = select_platform().unwrap();
         match platform.as_str() {
             "iOS" => create_ios_device(ios_devices),
-            "Android" => create_android_device(android_devices),
+            "Android" => create_android_device(),
             _ => println!("Invalid platform"),
         }
     }
@@ -89,7 +88,40 @@ fn create_ios_device(_ios_devices: Devices) {
     ios::create_ios_device(&simulator_name, &device_identifier, &runtime_identifier);
 }
 
-fn create_android_device(_android_devices: Vec<Device>) {
-    println!("Create Android device");
-    todo!("creating logic for android devices not yet available")
+fn create_android_device() {
+    // List available device profiles
+    let device_profiles = list_device_profiles();
+    let device_profile_names: Vec<&str> = device_profiles.iter().map(|s| s.as_str()).collect();
+
+    // Select device profile
+    let selection_device_index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select your Android device profile")
+        .default(0)
+        .items(&device_profile_names)
+        .interact()
+        .unwrap();
+
+    let selected_device_profile = &device_profiles[selection_device_index];
+    let emulator_name: String = Input::with_theme(&ColorfulTheme::default())
+        .with_prompt("Enter the emulator name")
+        .default(format!("{} Emulator", selected_device_profile))
+        .interact()
+        .unwrap();
+
+    // List available system images
+    let system_images = list_system_images();
+    let system_image_names: Vec<&str> = system_images.iter().map(|s| s.as_str()).collect();
+
+    // Select system image
+    let selection_image_index = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select your system image")
+        .default(0)
+        .items(&system_image_names)
+        .interact()
+        .unwrap();
+
+    let selected_system_image = &system_images[selection_image_index];
+
+    // Create the Android emulator with the selected system image and device profile
+    create_android_emulator(&emulator_name, selected_device_profile, selected_system_image);
 }
