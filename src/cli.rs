@@ -53,6 +53,15 @@ pub enum Command {
         #[clap(short, long)]
         android: bool,
     },
+
+    /// install a new iOS simulator runtime or Android system image
+    #[clap(name = "install")]
+    Install {
+        #[clap(short, long)]
+        ios: bool,
+        #[clap(short, long)]
+        android: bool,
+    },
 }
 
 #[cfg(test)]
@@ -166,6 +175,60 @@ mod tests {
     fn test_cli_erase_command() {
         let cli = Cli::try_parse_from(["simls", "erase"]).unwrap();
         assert!(matches!(cli.command, Command::Erase { .. }));
+    }
+
+    #[test]
+    fn test_cli_install_command() {
+        let cli = Cli::try_parse_from(["simls", "install"]).unwrap();
+        assert!(matches!(cli.command, Command::Install { .. }));
+    }
+
+    #[test]
+    fn test_cli_install_with_ios_flag() {
+        let cli = Cli::try_parse_from(["simls", "install", "--ios"]).unwrap();
+        match cli.command {
+            Command::Install { ios, android } => {
+                assert!(ios);
+                assert!(!android);
+            }
+            _ => panic!("Expected Install command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_install_with_android_flag() {
+        let cli = Cli::try_parse_from(["simls", "install", "-a"]).unwrap();
+        match cli.command {
+            Command::Install { ios, android } => {
+                assert!(!ios);
+                assert!(android);
+            }
+            _ => panic!("Expected Install command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_install_with_both_flags() {
+        let cli = Cli::try_parse_from(["simls", "install", "--ios", "--android"]).unwrap();
+        match cli.command {
+            Command::Install { ios, android } => {
+                assert!(ios);
+                assert!(android);
+            }
+            _ => panic!("Expected Install command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_install_with_short_flags() {
+        let cli = Cli::try_parse_from(["simls", "install", "-i", "-a"]).unwrap();
+        match cli.command {
+            Command::Install { ios, android } => {
+                assert!(ios);
+                assert!(android);
+            }
+            _ => panic!("Expected Install command"),
+        }
     }
 
     #[test]

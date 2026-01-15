@@ -64,6 +64,12 @@ pub trait Platform: Send + Sync {
 
     /// Lists available device types/profiles
     fn list_device_types(&self) -> Result<Vec<DeviceType>>;
+
+    /// Lists runtimes available for download (not yet installed)
+    fn list_available_runtimes(&self) -> Result<Vec<Runtime>>;
+
+    /// Installs a runtime by its identifier
+    fn install_runtime(&self, runtime_id: &str) -> Result<()>;
 }
 
 /// Status of platform tool availability

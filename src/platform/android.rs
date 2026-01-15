@@ -70,6 +70,20 @@ impl AndroidPlatform {
         }
         None
     }
+
+    /// Format a system image path into a human-readable name
+    /// e.g., "system-images;android-34;google_apis;arm64-v8a" -> "Android 34 (Google APIs, arm64-v8a)"
+    fn format_system_image_name(path: &str) -> String {
+        let parts: Vec<&str> = path.split(';').collect();
+        if parts.len() == 4 {
+            let api_level = parts[1].replace("android-", "Android ");
+            let variant = parts[2].replace('_', " ");
+            let arch = parts[3];
+            format!("{} ({}, {})", api_level, variant, arch)
+        } else {
+            path.to_string()
+        }
+    }
 }
 
 impl Platform for AndroidPlatform {
@@ -219,6 +233,63 @@ impl Platform for AndroidPlatform {
 
         Ok(device_types)
     }
+
+    fn list_available_runtimes(&self) -> Result<Vec<Runtime>> {
+        // Use sdkmanager --list to get all available system images (including not installed)
+        let output = Command::new("sdkmanager").args(["--list"]).output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: "sdkmanager --list".to_string(),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        let output_str = String::from_utf8_lossy(&output.stdout);
+
+        // Get installed runtimes to filter them out
+        let installed = self.list_runtimes().unwrap_or_default();
+        let installed_ids: std::collections::HashSet<_> =
+            installed.iter().map(|r| r.identifier.clone()).collect();
+
+        let runtimes: Vec<Runtime> = output_str
+            .lines()
+            .filter(|line| line.contains("system-images;"))
+            .filter_map(Self::parse_system_image)
+            .filter(|path| !installed_ids.contains(path))
+            .map(|path| {
+                let display_name = Self::format_system_image_name(&path);
+                Runtime::new(&path, &display_name)
+            })
+            .collect();
+
+        if runtimes.is_empty() {
+            return Err(Error::NoDevicesAvailable {
+                platform: "Android system image".to_string(),
+            });
+        }
+
+        Ok(runtimes)
+    }
+
+    fn install_runtime(&self, runtime_id: &str) -> Result<()> {
+        println!("Installing {}...", runtime_id);
+        println!("This may take a while depending on your internet connection.");
+
+        // Use sdkmanager to install the system image
+        // The --install flag is optional, we can just pass the package name
+        let output = Command::new("sdkmanager").args([runtime_id]).output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: format!("sdkmanager {}", runtime_id),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        println!("Successfully installed {}", runtime_id);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -289,5 +360,55 @@ mod tests {
         // On macOS with Android SDK, should be available
         // We just verify it returns a valid ToolStatus
         assert!(status.available || status.message.is_some());
+    }
+
+    #[test]
+    fn test_format_system_image_name_standard() {
+        assert_eq!(
+            AndroidPlatform::format_system_image_name(
+                "system-images;android-34;google_apis;arm64-v8a"
+            ),
+            "Android 34 (google apis, arm64-v8a)"
+        );
+    }
+
+    #[test]
+    fn test_format_system_image_name_with_playstore() {
+        assert_eq!(
+            AndroidPlatform::format_system_image_name(
+                "system-images;android-33;google_apis_playstore;x86_64"
+            ),
+            "Android 33 (google apis playstore, x86_64)"
+        );
+    }
+
+    #[test]
+    fn test_format_system_image_name_default_variant() {
+        assert_eq!(
+            AndroidPlatform::format_system_image_name("system-images;android-30;default;x86"),
+            "Android 30 (default, x86)"
+        );
+    }
+
+    #[test]
+    fn test_format_system_image_name_invalid_format() {
+        // Should return the original path if format is unexpected
+        assert_eq!(
+            AndroidPlatform::format_system_image_name("invalid-path"),
+            "invalid-path"
+        );
+    }
+
+    #[test]
+    fn test_format_system_image_name_too_few_parts() {
+        assert_eq!(
+            AndroidPlatform::format_system_image_name("system-images;android-34"),
+            "system-images;android-34"
+        );
+    }
+
+    #[test]
+    fn test_format_system_image_name_empty() {
+        assert_eq!(AndroidPlatform::format_system_image_name(""), "");
     }
 }

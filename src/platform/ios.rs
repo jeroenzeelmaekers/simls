@@ -59,6 +59,67 @@ impl IosPlatform {
         }
         None
     }
+
+    /// Extracts version number from a line containing iOS version info
+    fn extract_version_from_line(line: &str) -> Option<String> {
+        // Look for patterns like "iOS 17.0", "iOS 16.4", etc.
+        let words: Vec<&str> = line.split_whitespace().collect();
+        for (i, word) in words.iter().enumerate() {
+            if *word == "iOS" && i + 1 < words.len() {
+                let version_candidate =
+                    words[i + 1].trim_matches(|c: char| !c.is_numeric() && c != '.');
+                if version_candidate.contains('.') {
+                    return Some(version_candidate.to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Fallback method to list available runtimes using xcrun simctl
+    fn list_available_runtimes_fallback(&self) -> Result<Vec<Runtime>> {
+        // Use xcrun simctl runtime to list available runtimes
+        let output = Command::new("xcrun")
+            .args(["simctl", "runtime", "list", "-j"])
+            .output();
+
+        if let Ok(output) = output {
+            if output.status.success() {
+                let output_str = String::from_utf8_lossy(&output.stdout);
+                // Try to parse the JSON output for available runtimes
+                if let Ok(available) = serde_json::from_str::<AvailableRuntimes>(&output_str) {
+                    let runtimes: Vec<Runtime> = available
+                        .runtimes
+                        .into_iter()
+                        .filter(|r| r.platform.to_lowercase().contains("ios"))
+                        .map(|r| Runtime::new(&r.identifier, &r.version))
+                        .collect();
+                    if !runtimes.is_empty() {
+                        return Ok(runtimes);
+                    }
+                }
+            }
+        }
+
+        // If all else fails, return common iOS versions as suggestions
+        Ok(vec![Runtime::new("iOS", "iOS")])
+    }
+
+    /// Install runtime via xcrun simctl runtime add
+    fn install_runtime_via_simctl(&self, runtime_id: &str) -> Result<()> {
+        let output = Command::new("xcrun")
+            .args(["simctl", "runtime", "add", runtime_id])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: format!("xcrun simctl runtime add {}", runtime_id),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        Ok(())
+    }
 }
 
 impl Platform for IosPlatform {
@@ -234,6 +295,75 @@ impl Platform for IosPlatform {
 
         Ok(device_types)
     }
+
+    fn list_available_runtimes(&self) -> Result<Vec<Runtime>> {
+        // Use xcodebuild to list downloadable platforms
+        let output = Command::new("xcodebuild")
+            .args(["-downloadAllPlatforms", "-dry-run"])
+            .output();
+
+        // If the dry-run command fails or isn't supported, try parsing xcrun output
+        // and use Apple's platform list (this is a fallback)
+        if output.is_err() {
+            return self.list_available_runtimes_fallback();
+        }
+
+        let output = output.unwrap();
+
+        // Parse the output to find available platforms
+        // xcodebuild -downloadAllPlatforms -dry-run shows what would be downloaded
+        let output_str = String::from_utf8_lossy(&output.stdout);
+        let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+        // Combine stdout and stderr as xcodebuild may output to either
+        let combined = format!("{}\n{}", output_str, stderr_str);
+
+        let mut runtimes = Vec::new();
+        for line in combined.lines() {
+            // Look for lines mentioning iOS versions that would be downloaded
+            if line.contains("iOS") && (line.contains("Downloading") || line.contains("download")) {
+                if let Some(version) = Self::extract_version_from_line(line) {
+                    let identifier = format!("iOS {}", version);
+                    runtimes.push(Runtime::new(&identifier, &version));
+                }
+            }
+        }
+
+        // If no runtimes found from dry-run, use fallback
+        if runtimes.is_empty() {
+            return self.list_available_runtimes_fallback();
+        }
+
+        Ok(runtimes)
+    }
+
+    fn install_runtime(&self, runtime_id: &str) -> Result<()> {
+        // Extract the platform name (e.g., "iOS 17.0" -> "iOS")
+        // xcodebuild -downloadPlatform expects just the platform name like "iOS"
+        // For specific versions, we need to use the full identifier
+
+        println!("Downloading {}...", runtime_id);
+        println!("This may take a while and require administrator privileges.");
+
+        // Try xcodebuild -downloadPlatform first (for platform names like "iOS")
+        let output = Command::new("xcodebuild")
+            .args(["-downloadPlatform", runtime_id])
+            .output()?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            // If the platform name didn't work, try with xcrun simctl runtime add
+            if stderr.contains("unknown platform") || stderr.contains("invalid") {
+                return self.install_runtime_via_simctl(runtime_id);
+            }
+            return Err(Error::CommandFailed {
+                command: format!("xcodebuild -downloadPlatform {}", runtime_id),
+                message: stderr.to_string(),
+            });
+        }
+
+        Ok(())
+    }
 }
 
 // Raw serde structs for parsing xcrun simctl JSON output
@@ -267,6 +397,22 @@ struct RawRuntime {
 struct RawSupportedDeviceType {
     identifier: String,
     name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct AvailableRuntimes {
+    #[serde(default)]
+    runtimes: Vec<AvailableRuntime>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AvailableRuntime {
+    #[serde(default)]
+    identifier: String,
+    #[serde(default)]
+    version: String,
+    #[serde(default)]
+    platform: String,
 }
 
 #[cfg(test)]
@@ -342,5 +488,67 @@ mod tests {
         // On macOS with Xcode, should be available
         // We just verify it returns a valid ToolStatus
         assert!(status.available || status.message.is_some());
+    }
+
+    #[test]
+    fn test_extract_version_from_line_with_downloading() {
+        assert_eq!(
+            IosPlatform::extract_version_from_line("Downloading iOS 17.0 simulator runtime..."),
+            Some("17.0".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_from_line_with_download() {
+        assert_eq!(
+            IosPlatform::extract_version_from_line("Will download iOS 16.4"),
+            Some("16.4".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_from_line_simple() {
+        assert_eq!(
+            IosPlatform::extract_version_from_line("iOS 15.5 runtime"),
+            Some("15.5".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_from_line_with_trailing_chars() {
+        assert_eq!(
+            IosPlatform::extract_version_from_line("iOS 17.2, ready to download"),
+            Some("17.2".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_from_line_no_ios() {
+        assert_eq!(
+            IosPlatform::extract_version_from_line("watchOS 10.0 simulator"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_extract_version_from_line_empty() {
+        assert_eq!(IosPlatform::extract_version_from_line(""), None);
+    }
+
+    #[test]
+    fn test_extract_version_from_line_no_version() {
+        assert_eq!(
+            IosPlatform::extract_version_from_line("iOS simulator is ready"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_extract_version_from_line_ios_at_end() {
+        // iOS is at the end with no version following
+        assert_eq!(
+            IosPlatform::extract_version_from_line("Download the iOS"),
+            None
+        );
     }
 }

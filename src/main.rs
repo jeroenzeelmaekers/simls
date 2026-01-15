@@ -34,6 +34,7 @@ fn main() {
         Command::Create { ios, android } => commands::create::run(&registry, ios, android),
         Command::Delete { ios, android } => commands::delete::run(&registry, ios, android),
         Command::Erase { ios, android } => commands::erase::run(&registry, ios, android),
+        Command::Install { ios, android } => commands::install::run(&registry, ios, android),
     };
 
     if let Err(e) = result {
@@ -49,7 +50,8 @@ fn validate_platform_request(command: &Command, registry: &PlatformRegistry) -> 
         | Command::Start { ios, android }
         | Command::Create { ios, android }
         | Command::Delete { ios, android }
-        | Command::Erase { ios, android } => (*ios, *android),
+        | Command::Erase { ios, android }
+        | Command::Install { ios, android } => (*ios, *android),
     };
 
     if ios && registry.get(PlatformKind::Ios).is_none() {
