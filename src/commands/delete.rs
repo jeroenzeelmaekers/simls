@@ -1,82 +1,26 @@
-use dialoguer::{theme::ColorfulTheme, Select};
+use crate::error::{Error, Result};
+use crate::platform::PlatformRegistry;
+use crate::ui::{resolve_platform, select_device};
 
-use crate::{
-    structs::{android_devices::Device, ios_devices::Devices},
-    utils::ios::{self, extract_ios_version},
-    utils::android::delete_android_emulator,
-};
+/// Deletes a selected device on the chosen platform.
+pub fn run(registry: &PlatformRegistry, ios: bool, android: bool) -> Result<()> {
+    let platform = resolve_platform(registry, ios, android)?;
+    let devices = platform.list_devices()?;
 
-pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
-    if ios {
-        delete_ios_device(ios_devices);
-    } else if android {
-        delete_android_device(android_devices);
-    } else {
-        let platform = select_platform().unwrap();
-        match platform.as_str() {
-            "iOS" => delete_ios_device(ios_devices),
-            "Android" => delete_android_device(android_devices),
-            _ => println!("Invalid platform"),
-        }
-    }
-}
-
-fn select_platform() -> Result<String, String> {
-    let selections = &["iOS", "Android"];
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select your platform")
-        .default(0)
-        .items(&selections[..])
-        .interact_opt()
-        .unwrap();
-
-    match selection {
-        Some(selection) => Ok(selections[selection].to_string()),
-        None => Err("No platform selected".to_string()),
-    }
-}
-
-fn delete_ios_device(ios_devices: Devices) {
-    println!("Delete iOS device");
-
-    let mut devices_selection = Vec::new();
-
-    for (platform, device_list) in ios_devices.devices.iter() {
-        let ios_version = extract_ios_version(platform).unwrap_or_default();
-        for device in device_list {
-            let device_name = format!("{} ({})", device.name, ios_version);
-            devices_selection.push((device_name, device.udid.clone()));
-        }
+    if devices.is_empty() {
+        return Err(Error::NoDevicesAvailable {
+            platform: platform.name().to_string(),
+        });
     }
 
-    let device_names: Vec<&str> = devices_selection
-        .iter()
-        .map(|(name, _)| name.as_str())
-        .collect();
-    let selection_device_index = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select your device type")
-        .default(0)
-        .items(&device_names)
-        .interact()
-        .unwrap();
+    let selected = select_device(&devices, "Select the device to delete")?;
 
-    let (_, udid) = devices_selection.get(selection_device_index).unwrap();
+    platform.delete_device(&selected.id)?;
 
-    ios::delete_ios_device(udid)
-}
-
-fn delete_android_device(android_devices: Vec<Device>) {
-    let emulator_names: Vec<&str> = android_devices.iter().map(|emulator| emulator.name.as_str()).collect();
-    let selection_emulator_index = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select the emulator to delete")
-        .default(0)
-        .items(&emulator_names)
-        .interact()
-        .unwrap();
-
-    let selected_emulator = &android_devices[selection_emulator_index];
-
-    // Delete the selected emulator
-    delete_android_emulator(&selected_emulator.name);
+    println!(
+        "{} device '{}' deleted successfully.",
+        platform.name(),
+        selected.name
+    );
+    Ok(())
 }

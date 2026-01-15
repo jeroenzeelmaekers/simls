@@ -1,71 +1,29 @@
-use dialoguer::{theme::ColorfulTheme, Select};
+use crate::error::{Error, Result};
+use crate::platform::PlatformRegistry;
+use crate::ui::{resolve_platform, select_device};
 
-use crate::{
-    structs::{android_devices::Device, ios_devices::Devices},
-    utils::ios::{self, extract_ios_version},
-};
+/// Erases all content and settings from a selected device.
+pub fn run(registry: &PlatformRegistry, ios: bool, android: bool) -> Result<()> {
+    let platform = resolve_platform(registry, ios, android)?;
+    let devices = platform.list_devices()?;
 
-pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
-    if ios {
-        erase_ios_device(ios_devices);
-    } else if android {
-        erase_android_device(android_devices);
-    } else {
-        let platform = select_platform().unwrap();
-        match platform.as_str() {
-            "iOS" => erase_ios_device(ios_devices),
-            "Android" => erase_android_device(android_devices),
-            _ => println!("Invalid platform"),
-        }
-    }
-}
-
-fn select_platform() -> Result<String, String> {
-    let selections = &["iOS", "Android"];
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select your platform")
-        .default(0)
-        .items(&selections[..])
-        .interact_opt()
-        .unwrap();
-
-    match selection {
-        Some(selection) => Ok(selections[selection].to_string()),
-        None => Err("No platform selected".to_string()),
-    }
-}
-
-fn erase_ios_device(ios_devices: Devices) {
-    println!("Erase iOS device");
-
-    let mut devices_selection = Vec::new();
-
-    for (platform, device_list) in ios_devices.devices.iter() {
-        let ios_version = extract_ios_version(platform).unwrap_or_default();
-        for device in device_list {
-            let device_name = format!("{} ({})", device.name, ios_version);
-            devices_selection.push((device_name, device.udid.clone()));
-        }
+    if devices.is_empty() {
+        return Err(Error::NoDevicesAvailable {
+            platform: platform.name().to_string(),
+        });
     }
 
-    let device_names: Vec<&str> = devices_selection
-        .iter()
-        .map(|(name, _)| name.as_str())
-        .collect();
-    let selection_device_index = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Select the device you want to erase the content and settings from")
-        .default(0)
-        .items(&device_names)
-        .interact()
-        .unwrap();
+    let selected = select_device(
+        &devices,
+        "Select the device to erase content and settings from",
+    )?;
 
-    let (_, udid) = devices_selection.get(selection_device_index).unwrap();
+    platform.erase_device(&selected.id)?;
 
-    ios::erase_ios_device(udid)
-}
-
-fn erase_android_device(_android_devices: Vec<Device>) {
-    println!("Delete Android device");
-    todo!("erasing logic for android devices not yet available")
+    println!(
+        "{} device '{}' erased successfully.",
+        platform.name(),
+        selected.name
+    );
+    Ok(())
 }

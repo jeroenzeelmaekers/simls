@@ -1,42 +1,50 @@
-use crate::structs::android_devices::Device;
-use crate::structs::ios_devices::Devices;
-use crate::utils::ios::extract_ios_version;
+use crate::domain::DeviceState;
+use crate::error::Result;
+use crate::platform::{Platform, PlatformRegistry};
 use colored::Colorize;
 
-pub fn run(ios_devices: Devices, android_devices: Vec<Device>, ios: bool, android: bool) {
-    if ios {
-        list_ios(ios_devices);
-    } else if android {
-        list_android(android_devices);
+/// Lists all devices for available platforms.
+///
+/// If specific platform flags are provided, only lists that platform.
+/// Otherwise lists all available platforms.
+pub fn run(registry: &PlatformRegistry, ios: bool, android: bool) -> Result<()> {
+    let platforms_to_list: Vec<&dyn Platform> = if ios || android {
+        registry
+            .platforms()
+            .iter()
+            .filter(|p| {
+                (ios && p.kind() == crate::platform::PlatformKind::Ios)
+                    || (android && p.kind() == crate::platform::PlatformKind::Android)
+            })
+            .map(|p| p.as_ref())
+            .collect()
     } else {
-        list_ios(ios_devices);
-        list_android(android_devices);
-    }
-}
+        registry.platforms().iter().map(|p| p.as_ref()).collect()
+    };
 
-fn list_ios(devices: Devices) {
-    println!("iOS Devices:");
-    for (platform, device_list) in devices.devices.iter() {
-        let ios_version = extract_ios_version(platform).unwrap_or_default();
-        for device in device_list {
-            let status = match device.state.as_str() {
-                "Booted" => device.state.green(),
-                "Shutdown" => device.state.red(),
-                _ => device.state.normal(),
-            };
-            let display_name = if ios_version.is_empty() {
-                device.name.clone()
-            } else {
-                format!("{} ({})", device.name, ios_version)
-            };
-            println!("{} - {}", display_name, status);
+    for platform in platforms_to_list {
+        println!("{} Devices:", platform.name());
+
+        match platform.list_devices() {
+            Ok(devices) => {
+                if devices.is_empty() {
+                    println!("  No {} devices found.", platform.name().to_lowercase());
+                } else {
+                    for device in devices {
+                        let status = match device.state {
+                            DeviceState::Booted => device.state.as_str().green(),
+                            DeviceState::Shutdown => device.state.as_str().red(),
+                            DeviceState::Unknown => device.state.as_str().normal(),
+                        };
+                        println!("  {} - {}", device.display_name(), status);
+                    }
+                }
+            }
+            Err(e) => {
+                println!("  Error listing devices: {}", e);
+            }
         }
     }
-}
 
-fn list_android(android_devices: Vec<Device>) {
-    println!("Android Devices:");
-    android_devices
-        .iter()
-        .for_each(|device| println!("{}", device.name));
+    Ok(())
 }

@@ -1,0 +1,222 @@
+use crate::domain::{Device, DeviceType, Runtime};
+use crate::error::{Error, Result};
+use crate::platform::{Platform, PlatformKind, ToolStatus};
+use std::process::Command;
+
+/// Android Platform implementation using Android SDK tools
+pub struct AndroidPlatform {
+    _private: (), // Prevent external construction
+}
+
+impl AndroidPlatform {
+    /// Attempts to create an Android platform instance.
+    /// Returns None if Android tools are not available.
+    pub fn try_new() -> Option<Self> {
+        let status = Self::check_tools();
+        if status.available {
+            Some(Self { _private: () })
+        } else {
+            None
+        }
+    }
+
+    /// Check if Android development tools are available
+    pub fn check_tools() -> ToolStatus {
+        if !cfg!(target_os = "macos") {
+            return ToolStatus::unavailable(
+                "Android emulators are currently only supported on macOS.",
+            );
+        }
+
+        // Check if emulator is available
+        let emulator_exists = Command::new("emulator").args(["-version"]).output().is_ok();
+        if !emulator_exists {
+            return ToolStatus::unavailable(
+                "Android Emulator not found. \
+                 Make sure Android SDK is installed and ANDROID_HOME is set. \
+                 Add $ANDROID_HOME/emulator to your PATH.",
+            );
+        }
+
+        // Check if avdmanager is available
+        let avdmanager_exists = Command::new("avdmanager")
+            .args(["list", "target"])
+            .output()
+            .is_ok();
+        if !avdmanager_exists {
+            return ToolStatus::unavailable(
+                "Android AVD Manager not found. \
+                 Make sure Android SDK is installed and ANDROID_HOME is set. \
+                 Add $ANDROID_HOME/cmdline-tools/latest/bin to your PATH.",
+            );
+        }
+
+        ToolStatus::available()
+    }
+
+    /// Parse system image path from sdkmanager output line
+    fn parse_system_image(line: &str) -> Option<String> {
+        let parts: Vec<&str> = line.split('|').collect();
+        if parts.len() >= 4 {
+            let path_parts: Vec<&str> = parts[0].trim().split(';').collect();
+            if path_parts.len() == 4 {
+                return Some(format!(
+                    "system-images;{};{};{}",
+                    path_parts[1].trim(),
+                    path_parts[2].trim(),
+                    path_parts[3].trim()
+                ));
+            }
+        }
+        None
+    }
+}
+
+impl Platform for AndroidPlatform {
+    fn kind(&self) -> PlatformKind {
+        PlatformKind::Android
+    }
+
+    fn list_devices(&self) -> Result<Vec<Device>> {
+        let output = Command::new("emulator").args(["-list-avds"]).output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: "emulator -list-avds".to_string(),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        let output_string = String::from_utf8(output.stdout).map_err(|e| Error::Parse {
+            message: format!("Invalid UTF-8 in command output: {}", e),
+        })?;
+
+        let devices = output_string
+            .lines()
+            .filter(|line| !line.is_empty())
+            .map(|name| Device::new(name, name))
+            .collect();
+
+        Ok(devices)
+    }
+
+    fn start_device(&self, device_id: &str) -> Result<()> {
+        let output = Command::new("screen")
+            .args(["-m", "-d", "emulator", "-avd", device_id])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: format!("emulator -avd {}", device_id),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        Ok(())
+    }
+
+    fn create_device(&self, name: &str, device_type: &str, runtime: &str) -> Result<()> {
+        let output = Command::new("avdmanager")
+            .args([
+                "create",
+                "avd",
+                "-n",
+                name,
+                "-k",
+                runtime,
+                "-d",
+                device_type,
+            ])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: "avdmanager create avd".to_string(),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        Ok(())
+    }
+
+    fn delete_device(&self, device_id: &str) -> Result<()> {
+        let output = Command::new("avdmanager")
+            .args(["delete", "avd", "--name", device_id])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: "avdmanager delete avd".to_string(),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        Ok(())
+    }
+
+    fn erase_device(&self, _device_id: &str) -> Result<()> {
+        Err(Error::NotImplemented {
+            feature: "Android emulator erase".to_string(),
+        })
+    }
+
+    fn list_runtimes(&self) -> Result<Vec<Runtime>> {
+        let output = Command::new("sdkmanager").args(["--list"]).output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: "sdkmanager --list".to_string(),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        let output_str = String::from_utf8_lossy(&output.stdout);
+
+        let runtimes: Vec<Runtime> = output_str
+            .lines()
+            .filter(|line| line.contains("system-images;"))
+            .filter_map(Self::parse_system_image)
+            .map(|path| Runtime::new(&path, &path))
+            .collect();
+
+        if runtimes.is_empty() {
+            return Err(Error::NoDevicesAvailable {
+                platform: "Android system image".to_string(),
+            });
+        }
+
+        Ok(runtimes)
+    }
+
+    fn list_device_types(&self) -> Result<Vec<DeviceType>> {
+        let output = Command::new("avdmanager")
+            .args(["list", "device"])
+            .output()?;
+
+        if !output.status.success() {
+            return Err(Error::CommandFailed {
+                command: "avdmanager list device".to_string(),
+                message: String::from_utf8_lossy(&output.stderr).to_string(),
+            });
+        }
+
+        let output_str = String::from_utf8_lossy(&output.stdout);
+
+        let mut device_types = Vec::new();
+        for line in output_str.lines() {
+            if line.starts_with("id:") {
+                if let Some(name) = line.split('"').nth(1) {
+                    device_types.push(DeviceType::new(name, name));
+                }
+            }
+        }
+
+        if device_types.is_empty() {
+            return Err(Error::NoDevicesAvailable {
+                platform: "Android device profile".to_string(),
+            });
+        }
+
+        Ok(device_types)
+    }
+}
