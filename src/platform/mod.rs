@@ -166,3 +166,66 @@ impl PlatformRegistry {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_platform_kind_as_str() {
+        assert_eq!(PlatformKind::Ios.as_str(), "iOS");
+        assert_eq!(PlatformKind::Android.as_str(), "Android");
+    }
+
+    #[test]
+    fn test_platform_kind_display() {
+        assert_eq!(format!("{}", PlatformKind::Ios), "iOS");
+        assert_eq!(format!("{}", PlatformKind::Android), "Android");
+    }
+
+    #[test]
+    fn test_platform_kind_equality() {
+        assert_eq!(PlatformKind::Ios, PlatformKind::Ios);
+        assert_eq!(PlatformKind::Android, PlatformKind::Android);
+        assert_ne!(PlatformKind::Ios, PlatformKind::Android);
+    }
+
+    #[test]
+    fn test_platform_kind_clone() {
+        let kind = PlatformKind::Ios;
+        let cloned = kind;
+        assert_eq!(kind, cloned);
+    }
+
+    #[test]
+    fn test_tool_status_available() {
+        let status = ToolStatus::available();
+        assert!(status.available);
+        assert!(status.message.is_none());
+    }
+
+    #[test]
+    fn test_tool_status_unavailable_with_str() {
+        let status = ToolStatus::unavailable("Tool not found");
+        assert!(!status.available);
+        assert_eq!(status.message, Some("Tool not found".to_string()));
+    }
+
+    #[test]
+    fn test_tool_status_unavailable_with_string() {
+        let status = ToolStatus::unavailable(String::from("Custom error message"));
+        assert!(!status.available);
+        assert_eq!(status.message, Some("Custom error message".to_string()));
+    }
+
+    #[test]
+    fn test_command_exists_with_valid_command() {
+        // 'echo' is available on all platforms
+        assert!(command_exists("echo", &["test"]));
+    }
+
+    #[test]
+    fn test_command_exists_with_invalid_command() {
+        assert!(!command_exists("this_command_does_not_exist_12345", &[]));
+    }
+}

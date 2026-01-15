@@ -268,3 +268,79 @@ struct RawSupportedDeviceType {
     identifier: String,
     name: String,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_version_standard_format() {
+        assert_eq!(
+            IosPlatform::extract_version("com.apple.CoreSimulator.SimRuntime.iOS-17-0"),
+            Some("17.0".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_double_digit_version() {
+        assert_eq!(
+            IosPlatform::extract_version("com.apple.CoreSimulator.SimRuntime.iOS-16-4"),
+            Some("16.4".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_ios_15() {
+        assert_eq!(
+            IosPlatform::extract_version("com.apple.CoreSimulator.SimRuntime.iOS-15-5"),
+            Some("15.5".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_version_no_ios_prefix() {
+        assert_eq!(
+            IosPlatform::extract_version("com.apple.CoreSimulator.SimRuntime.watchOS-10-0"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_extract_version_empty_string() {
+        assert_eq!(IosPlatform::extract_version(""), None);
+    }
+
+    #[test]
+    fn test_extract_version_invalid_format() {
+        assert_eq!(IosPlatform::extract_version("invalid-string"), None);
+    }
+
+    #[test]
+    fn test_extract_version_incomplete_version() {
+        // Only one number after iOS
+        assert_eq!(IosPlatform::extract_version("iOS-17"), None);
+    }
+
+    #[test]
+    fn test_extract_version_non_numeric_parts() {
+        assert_eq!(IosPlatform::extract_version("iOS-abc-def"), None);
+    }
+
+    #[test]
+    fn test_ios_platform_kind() {
+        // Note: This test will only pass on macOS with Xcode installed
+        if let Some(platform) = IosPlatform::try_new() {
+            assert_eq!(platform.kind(), PlatformKind::Ios);
+            assert_eq!(platform.name(), "iOS");
+        }
+    }
+
+    #[test]
+    fn test_check_tools_returns_status() {
+        let status = IosPlatform::check_tools();
+        // On non-macOS or without Xcode, should be unavailable
+        // On macOS with Xcode, should be available
+        // We just verify it returns a valid ToolStatus
+        assert!(status.available || status.message.is_some());
+    }
+}

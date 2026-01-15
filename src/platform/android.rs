@@ -220,3 +220,74 @@ impl Platform for AndroidPlatform {
         Ok(device_types)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_system_image_valid() {
+        let line = "system-images;android-34;google_apis;arm64-v8a | 14 | Google APIs ARM 64 v8a | system-images/android-34/google_apis/arm64-v8a";
+        let result = AndroidPlatform::parse_system_image(line);
+        assert_eq!(
+            result,
+            Some("system-images;android-34;google_apis;arm64-v8a".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_system_image_android_33() {
+        let line = "system-images;android-33;google_apis_playstore;x86_64 | 33 | Google Play x86_64 | system-images/android-33/google_apis_playstore/x86_64";
+        let result = AndroidPlatform::parse_system_image(line);
+        assert_eq!(
+            result,
+            Some("system-images;android-33;google_apis_playstore;x86_64".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_system_image_invalid_format() {
+        // Missing parts
+        let line = "system-images;android-34";
+        let result = AndroidPlatform::parse_system_image(line);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_system_image_empty_string() {
+        let result = AndroidPlatform::parse_system_image("");
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_system_image_not_system_image() {
+        let line = "platforms;android-34 | 34 | Android API 34";
+        let result = AndroidPlatform::parse_system_image(line);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_parse_system_image_fewer_than_four_pipes() {
+        let line = "system-images;android-34;google_apis;arm64-v8a | 14 | Description";
+        let result = AndroidPlatform::parse_system_image(line);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_android_platform_kind() {
+        // Note: This test will only pass on macOS with Android SDK installed
+        if let Some(platform) = AndroidPlatform::try_new() {
+            assert_eq!(platform.kind(), PlatformKind::Android);
+            assert_eq!(platform.name(), "Android");
+        }
+    }
+
+    #[test]
+    fn test_check_tools_returns_status() {
+        let status = AndroidPlatform::check_tools();
+        // On non-macOS or without Android SDK, should be unavailable
+        // On macOS with Android SDK, should be available
+        // We just verify it returns a valid ToolStatus
+        assert!(status.available || status.message.is_some());
+    }
+}

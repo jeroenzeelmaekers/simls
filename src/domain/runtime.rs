@@ -45,3 +45,68 @@ impl DeviceType {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_runtime_new() {
+        let runtime = Runtime::new("com.apple.CoreSimulator.SimRuntime.iOS-17-0", "17.0");
+        assert_eq!(
+            runtime.identifier,
+            "com.apple.CoreSimulator.SimRuntime.iOS-17-0"
+        );
+        assert_eq!(runtime.name, "17.0");
+        assert!(runtime.supported_device_types.is_empty());
+    }
+
+    #[test]
+    fn test_runtime_with_device_types() {
+        let device_types = vec![
+            DeviceType::new("iphone15", "iPhone 15"),
+            DeviceType::new("iphone15pro", "iPhone 15 Pro"),
+        ];
+        let runtime = Runtime::new("runtime-id", "17.0").with_device_types(device_types);
+
+        assert_eq!(runtime.supported_device_types.len(), 2);
+        assert_eq!(runtime.supported_device_types[0].name, "iPhone 15");
+        assert_eq!(runtime.supported_device_types[1].name, "iPhone 15 Pro");
+    }
+
+    #[test]
+    fn test_runtime_with_empty_device_types() {
+        let runtime = Runtime::new("runtime-id", "17.0").with_device_types(vec![]);
+        assert!(runtime.supported_device_types.is_empty());
+    }
+
+    #[test]
+    fn test_device_type_new() {
+        let dt = DeviceType::new(
+            "com.apple.CoreSimulator.SimDeviceType.iPhone-15",
+            "iPhone 15",
+        );
+        assert_eq!(
+            dt.identifier,
+            "com.apple.CoreSimulator.SimDeviceType.iPhone-15"
+        );
+        assert_eq!(dt.name, "iPhone 15");
+    }
+
+    #[test]
+    fn test_device_type_with_string_inputs() {
+        let dt = DeviceType::new(String::from("pixel_7"), String::from("Pixel 7"));
+        assert_eq!(dt.identifier, "pixel_7");
+        assert_eq!(dt.name, "Pixel 7");
+    }
+
+    #[test]
+    fn test_runtime_builder_chain() {
+        let runtime = Runtime::new("android-34", "Android 14")
+            .with_device_types(vec![DeviceType::new("pixel_7", "Pixel 7")]);
+
+        assert_eq!(runtime.identifier, "android-34");
+        assert_eq!(runtime.name, "Android 14");
+        assert_eq!(runtime.supported_device_types.len(), 1);
+    }
+}

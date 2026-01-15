@@ -69,3 +69,87 @@ impl From<&str> for DeviceState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_device_new() {
+        let device = Device::new("test-id", "Test Device");
+        assert_eq!(device.id, "test-id");
+        assert_eq!(device.name, "Test Device");
+        assert_eq!(device.state, DeviceState::Unknown);
+        assert!(device.platform_version.is_none());
+    }
+
+    #[test]
+    fn test_device_with_state() {
+        let device = Device::new("id", "name").with_state(DeviceState::Booted);
+        assert_eq!(device.state, DeviceState::Booted);
+    }
+
+    #[test]
+    fn test_device_with_platform_version() {
+        let device = Device::new("id", "name").with_platform_version("17.0");
+        assert_eq!(device.platform_version, Some("17.0".to_string()));
+    }
+
+    #[test]
+    fn test_device_display_name_without_version() {
+        let device = Device::new("id", "iPhone 15");
+        assert_eq!(device.display_name(), "iPhone 15");
+    }
+
+    #[test]
+    fn test_device_display_name_with_version() {
+        let device = Device::new("id", "iPhone 15").with_platform_version("17.0");
+        assert_eq!(device.display_name(), "iPhone 15 (17.0)");
+    }
+
+    #[test]
+    fn test_device_builder_chain() {
+        let device = Device::new("udid-123", "iPhone 15 Pro")
+            .with_state(DeviceState::Shutdown)
+            .with_platform_version("17.2");
+
+        assert_eq!(device.id, "udid-123");
+        assert_eq!(device.name, "iPhone 15 Pro");
+        assert_eq!(device.state, DeviceState::Shutdown);
+        assert_eq!(device.platform_version, Some("17.2".to_string()));
+    }
+
+    #[test]
+    fn test_device_state_default() {
+        let state = DeviceState::default();
+        assert_eq!(state, DeviceState::Unknown);
+    }
+
+    #[test]
+    fn test_device_state_as_str() {
+        assert_eq!(DeviceState::Booted.as_str(), "Booted");
+        assert_eq!(DeviceState::Shutdown.as_str(), "Shutdown");
+        assert_eq!(DeviceState::Unknown.as_str(), "Unknown");
+    }
+
+    #[test]
+    fn test_device_state_from_str_booted() {
+        assert_eq!(DeviceState::from("booted"), DeviceState::Booted);
+        assert_eq!(DeviceState::from("Booted"), DeviceState::Booted);
+        assert_eq!(DeviceState::from("BOOTED"), DeviceState::Booted);
+    }
+
+    #[test]
+    fn test_device_state_from_str_shutdown() {
+        assert_eq!(DeviceState::from("shutdown"), DeviceState::Shutdown);
+        assert_eq!(DeviceState::from("Shutdown"), DeviceState::Shutdown);
+        assert_eq!(DeviceState::from("SHUTDOWN"), DeviceState::Shutdown);
+    }
+
+    #[test]
+    fn test_device_state_from_str_unknown() {
+        assert_eq!(DeviceState::from(""), DeviceState::Unknown);
+        assert_eq!(DeviceState::from("invalid"), DeviceState::Unknown);
+        assert_eq!(DeviceState::from("starting"), DeviceState::Unknown);
+    }
+}
